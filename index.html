@@ -1,485 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MetaLens — Image Metadata Viewer</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MetaLens — EXIF & GPS Analyzer</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
 
-    body {
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      background:
-        radial-gradient(circle at 20% 10%, #302060 0, transparent 35%),
-        radial-gradient(circle at 80% 80%, #064b55 0, transparent 35%),
-        #070812;
-      overflow-x: hidden;
-    }
+body{
+  min-height:100vh;
+  font-family:Inter,Arial,sans-serif;
+  color:#fff;
+  background:
+    radial-gradient(circle at 10% 10%,#47218a 0,transparent 30%),
+    radial-gradient(circle at 90% 80%,#006b76 0,transparent 30%),
+    #060710;
+}
 
-    .orb {
-      position: fixed;
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: .35;
-      pointer-events: none;
-    }
+.container{
+  width:min(1150px,92%);
+  margin:auto;
+  padding:45px 0;
+}
 
-    .orb.one {
-      background: #7c3cff;
-      top: -100px;
-      left: -100px;
-    }
+header{text-align:center;margin-bottom:35px}
 
-    .orb.two {
-      background: #00e5ff;
-      right: -100px;
-      bottom: -100px;
-    }
+.badge{
+  display:inline-block;
+  padding:8px 14px;
+  border:1px solid #ffffff20;
+  border-radius:100px;
+  color:#8defff;
+  font-size:11px;
+  letter-spacing:2px;
+  background:#ffffff08;
+}
 
-    .container {
-      width: min(1100px, 92%);
-      margin: auto;
-      padding: 45px 0;
-      position: relative;
-      z-index: 2;
-    }
+h1{
+  margin-top:18px;
+  font-size:clamp(42px,8vw,82px);
+  line-height:.95;
+  background:linear-gradient(90deg,#fff,#70efff,#a879ff);
+  -webkit-background-clip:text;
+  color:transparent;
+}
 
-    header {
-      text-align: center;
-      margin-bottom: 35px;
-    }
+.subtitle{
+  color:#969cad;
+  margin-top:16px;
+}
 
-    .logo {
-      display: inline-block;
-      font-size: 14px;
-      letter-spacing: 4px;
-      color: #9defff;
-      margin-bottom: 15px;
-    }
+.upload{
+  padding:50px 25px;
+  text-align:center;
+  border:1px solid #ffffff18;
+  border-radius:30px;
+  background:#ffffff08;
+  backdrop-filter:blur(25px);
+  transition:.25s;
+}
 
-    h1 {
-      font-size: clamp(40px, 8vw, 78px);
-      line-height: .95;
-      background: linear-gradient(90deg, #fff, #8defff, #a978ff);
-      -webkit-background-clip: text;
-      color: transparent;
-    }
+.upload.drag{
+  border-color:#72efff;
+  transform:scale(1.01);
+  box-shadow:0 0 50px #00d9ff22;
+}
 
-    header p {
-      margin-top: 15px;
-      color: #a8adbd;
-    }
+.upload-icon{
+  font-size:60px;
+  margin-bottom:15px;
+}
 
-    .upload {
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 28px;
-      padding: 45px 25px;
-      text-align: center;
-      background: rgba(255,255,255,.055);
-      backdrop-filter: blur(25px);
-      box-shadow: 0 30px 100px rgba(0,0,0,.35);
-      transition: .3s;
-    }
+.upload h2{font-size:25px}
 
-    .upload.drag {
-      transform: scale(1.02);
-      border-color: #70eaff;
-      box-shadow: 0 0 50px rgba(0,229,255,.18);
-    }
+.upload p{
+  margin:10px 0 25px;
+  color:#858b9d;
+}
 
-    .upload-icon {
-      font-size: 55px;
-      margin-bottom: 15px;
-    }
+input{display:none}
 
-    .upload h2 {
-      font-size: 25px;
-      margin-bottom: 8px;
-    }
+.btn{
+  display:inline-block;
+  padding:15px 28px;
+  border-radius:15px;
+  color:#061017;
+  font-weight:800;
+  cursor:pointer;
+  background:linear-gradient(135deg,#67efff,#a77aff);
+}
 
-    .upload p {
-      color: #9298a9;
-      margin-bottom: 25px;
-    }
+.local{
+  margin-top:17px;
+  color:#626979;
+  font-size:12px;
+}
 
-    input[type=file] {
-      display: none;
-    }
+#result{display:none;margin-top:30px}
 
-    .button {
-      display: inline-block;
-      cursor: pointer;
-      padding: 15px 28px;
-      border-radius: 14px;
-      font-weight: bold;
-      color: #041016;
-      background: linear-gradient(135deg, #6df4ff, #9f78ff);
-      box-shadow: 0 10px 35px rgba(0,229,255,.2);
-    }
+.top{
+  display:grid;
+  grid-template-columns:330px 1fr;
+  gap:22px;
+}
 
-    .privacy {
-      margin-top: 16px;
-      font-size: 12px;
-      color: #6f7587;
-    }
+.card{
+  border:1px solid #ffffff12;
+  border-radius:24px;
+  background:#ffffff08;
+  backdrop-filter:blur(20px);
+  padding:22px;
+}
 
-    #result {
-      display: none;
-      margin-top: 30px;
-    }
+.preview{
+  display:flex;
+  min-height:300px;
+  align-items:center;
+  justify-content:center;
+}
 
-    .preview {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 25px;
-      margin-bottom: 25px;
-    }
+.preview img{
+  max-width:100%;
+  max-height:450px;
+  border-radius:16px;
+  object-fit:contain;
+}
 
-    .preview-card,
-    .meta-card {
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 22px;
-      background: rgba(255,255,255,.055);
-      backdrop-filter: blur(20px);
-      overflow: hidden;
-    }
+h2.section-title{
+  margin-bottom:18px;
+  font-size:20px;
+}
 
-    .preview-card {
-      min-height: 300px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-    }
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:11px;
+}
 
-    #preview {
-      max-width: 100%;
-      max-height: 420px;
-      border-radius: 15px;
-      object-fit: contain;
-    }
+.item{
+  padding:14px;
+  border-radius:14px;
+  background:#00000025;
+  border:1px solid #ffffff08;
+}
 
-    .meta-card {
-      padding: 25px;
-    }
+.label{
+  color:#71798c;
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
 
-    .meta-card h2 {
-      margin-bottom: 20px;
-    }
+.value{
+  color:#eafcff;
+  font-size:14px;
+  word-break:break-word;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
+.section{margin-top:22px}
 
-    .item {
-      padding: 15px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(255,255,255,.06);
-    }
+.gps{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #00eaff35;
+  background:
+    radial-gradient(circle at 80% 20%,#00eaff20,transparent 35%),
+    #ffffff08;
+}
 
-    .label {
-      color: #777f94;
-      font-size: 12px;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+.gps-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:22px;
+  margin-bottom:18px;
+}
 
-    .value {
-      color: #e9faff;
-      word-break: break-word;
-      font-size: 14px;
-    }
+.location-status{
+  display:inline-block;
+  padding:7px 11px;
+  border-radius:100px;
+  font-size:11px;
+  background:#ffffff0d;
+  color:#8b93a5;
+  margin-bottom:18px;
+}
 
-    .section {
-      margin-top: 25px;
-    }
+.map-buttons{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
 
-    .section-title {
-      font-size: 20px;
-      margin-bottom: 12px;
-    }
+.map-btn{
+  text-decoration:none;
+  color:#061017;
+  font-weight:bold;
+  padding:12px 16px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#69f4ff,#9e7aff);
+}
 
-    .raw {
-      max-height: 450px;
-      overflow: auto;
-      padding: 20px;
-      border-radius: 18px;
-      background: #05060b;
-      border: 1px solid rgba(255,255,255,.08);
-      font-family: monospace;
-      font-size: 12px;
-      color: #9defff;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+.raw{
+  background:#030409;
+  padding:18px;
+  border-radius:15px;
+  max-height:450px;
+  overflow:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+  font:12px monospace;
+  color:#8defff;
+}
 
-    .clear {
-      margin-top: 20px;
-      padding: 12px 20px;
-      border: 1px solid rgba(255,255,255,.15);
-      background: rgba(255,255,255,.05);
-      color: white;
-      border-radius: 12px;
-      cursor: pointer;
-    }
+.clear{
+  margin-top:20px;
+  padding:12px 18px;
+  border:1px solid #ffffff18;
+  border-radius:12px;
+  background:#ffffff08;
+  color:#fff;
+  cursor:pointer;
+}
 
-    footer {
-      text-align: center;
-      margin-top: 35px;
-      color: #626879;
-      font-size: 12px;
-    }
+footer{
+  text-align:center;
+  color:#555d70;
+  font-size:11px;
+  margin-top:35px;
+}
 
-    @media(max-width: 750px) {
-      .preview {
-        grid-template-columns: 1fr;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .preview-card {
-        min-height: 200px;
-      }
-    }
-  </style>
+@media(max-width:750px){
+  .top{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 
 <body>
 
-  <div class="orb one"></div>
-  <div class="orb two"></div>
+<div class="container">
 
-  <main class="container">
+<header>
+  <span class="badge">NO API • NO SERVER • PRIVATE</span>
+  <h1>MetaLens</h1>
+  <p class="subtitle">
+    Advanced EXIF, camera & GPS metadata analyzer
+  </p>
+</header>
 
-    <header>
-      <div class="logo">PRIVATE • LOCAL • NO API</div>
-      <h1>MetaLens</h1>
-      <p>Extract image metadata directly inside your browser.</p>
-    </header>
+<section class="upload" id="dropZone">
 
-    <section class="upload" id="dropZone">
+  <div class="upload-icon">📸</div>
 
-      <div class="upload-icon">⌁</div>
+  <h2>Drop an image here</h2>
 
-      <h2>Drop your image here</h2>
+  <p>
+    JPG / JPEG images with EXIF metadata work best
+  </p>
 
-      <p>
-        JPG, JPEG, PNG, WEBP and other browser-readable images
-      </p>
+  <label class="btn">
+    Choose Image
+    <input id="fileInput" type="file" accept="image/*">
+  </label>
 
-      <label class="button">
-        Choose Image
-        <input id="fileInput" type="file" accept="image/*">
-      </label>
+  <div class="local">
+    🔒 Everything is processed locally in your browser.
+  </div>
 
-      <div class="privacy">
-        🔒 Your image is processed locally. Nothing is uploaded to a server.
-      </div>
+</section>
 
-    </section>
+<section id="result">
 
-    <section id="result">
+  <div class="top">
 
-      <div class="preview">
+    <div class="card preview">
+      <img id="preview">
+    </div>
 
-        <div class="preview-card">
-          <img id="preview" alt="Image preview">
-        </div>
+    <div class="card">
+      <h2 class="section-title">📄 File Information</h2>
+      <div class="grid" id="basicInfo"></div>
+    </div>
 
-        <div class="meta-card">
+  </div>
 
-          <h2>Image Information</h2>
+  <div class="card section gps">
 
-          <div class="grid" id="basicInfo"></div>
+    <div class="gps-title">
+      📍 GPS Location
+    </div>
 
-        </div>
+    <div id="gpsStatus" class="location-status">
+      Checking EXIF GPS data...
+    </div>
 
-      </div>
+    <div class="grid" id="gpsInfo"></div>
 
-      <div class="meta-card section">
+    <div class="map-buttons" id="mapButtons"></div>
 
-        <div class="section-title">
-          📷 EXIF / Metadata
-        </div>
+  </div>
 
-        <div class="grid" id="exifInfo"></div>
+  <div class="card section">
 
-      </div>
+    <h2 class="section-title">📷 Camera & EXIF</h2>
 
-      <div class="meta-card section">
+    <div class="grid" id="exifInfo"></div>
 
-        <div class="section-title">
-          🧬 Raw Metadata
-        </div>
+  </div>
 
-        <div class="raw" id="rawInfo"></div>
+  <div class="card section">
 
-      </div>
+    <h2 class="section-title">🧬 Raw Metadata</h2>
 
-      <button class="clear" onclick="clearResult()">
-        ✕ Clear Image
-      </button>
+    <div class="raw" id="rawInfo"></div>
 
-    </section>
+  </div>
 
-    <footer>
-      MetaLens • Client-side metadata analyzer
-    </footer>
+  <button class="clear" onclick="clearAll()">
+    ✕ Clear
+  </button>
 
-  </main>
+</section>
 
+<footer>
+  MetaLens — Client-side image metadata analyzer
+</footer>
+
+</div>
 
 <script>
 
-/*
-  Lightweight EXIF reader.
-  Works without API/backend.
-*/
+const input=document.getElementById("fileInput");
+const drop=document.getElementById("dropZone");
 
-const input = document.getElementById("fileInput");
-const dropZone = document.getElementById("dropZone");
-const result = document.getElementById("result");
-
-input.addEventListener("change", e => {
-  if (e.target.files[0]) processImage(e.target.files[0]);
+input.addEventListener("change",e=>{
+  if(e.target.files[0]) loadImage(e.target.files[0]);
 });
 
-dropZone.addEventListener("dragover", e => {
+drop.addEventListener("dragover",e=>{
   e.preventDefault();
-  dropZone.classList.add("drag");
+  drop.classList.add("drag");
 });
 
-dropZone.addEventListener("dragleave", () => {
-  dropZone.classList.remove("drag");
+drop.addEventListener("dragleave",()=>{
+  drop.classList.remove("drag");
 });
 
-dropZone.addEventListener("drop", e => {
+drop.addEventListener("drop",e=>{
   e.preventDefault();
-  dropZone.classList.remove("drag");
+  drop.classList.remove("drag");
 
-  const file = e.dataTransfer.files[0];
+  const file=e.dataTransfer.files[0];
 
-  if (file && file.type.startsWith("image/")) {
-    processImage(file);
+  if(file && file.type.startsWith("image/")){
+    loadImage(file);
   }
 });
 
 
-function processImage(file) {
+function loadImage(file){
 
-  result.style.display = "block";
+  document.getElementById("result").style.display="block";
 
-  const preview = document.getElementById("preview");
+  const img=document.getElementById("preview");
 
-  preview.src = URL.createObjectURL(file);
+  img.src=URL.createObjectURL(file);
 
-  preview.onload = () => {
+  img.onload=()=>{
 
-    const basic = {
-
-      "File Name": file.name,
-
-      "File Type": file.type || "Unknown",
-
-      "File Size":
-        formatBytes(file.size),
-
-      "Last Modified":
-        new Date(file.lastModified).toLocaleString(),
-
-      "Width":
-        preview.naturalWidth + " px",
-
-      "Height":
-        preview.naturalHeight + " px",
-
-      "Aspect Ratio":
-        calculateRatio(
-          preview.naturalWidth,
-          preview.naturalHeight
-        ),
-
-      "Browser":
-        navigator.userAgent
-
+    const info={
+      "File Name":file.name,
+      "File Type":file.type || "Unknown",
+      "File Size":formatBytes(file.size),
+      "Width":img.naturalWidth+" px",
+      "Height":img.naturalHeight+" px",
+      "Aspect Ratio":ratio(img.naturalWidth,img.naturalHeight),
+      "Modified":new Date(file.lastModified).toLocaleString()
     };
 
-    renderInfo("basicInfo", basic);
+    render("basicInfo",info);
 
     readExif(file);
   };
 }
 
 
-function renderInfo(elementId, data) {
+function readExif(file){
 
-  const container = document.getElementById(elementId);
+  const reader=new FileReader();
 
-  container.innerHTML = "";
+  reader.onload=e=>{
 
-  Object.entries(data).forEach(([key, value]) => {
+    const view=new DataView(e.target.result);
 
-    const div = document.createElement("div");
+    const data=parseJPEG(view);
 
-    div.className = "item";
+    if(!data){
 
-    div.innerHTML = `
-      <div class="label">${escapeHTML(key)}</div>
-      <div class="value">${escapeHTML(String(value))}</div>
-    `;
-
-    container.appendChild(div);
-
-  });
-}
-
-
-function readExif(file) {
-
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-
-    const buffer = e.target.result;
-
-    const view = new DataView(buffer);
-
-    const exif = parseJPEGExif(view);
-
-    if (!exif) {
-
-      renderInfo("exifInfo", {
-        "Status":
-          "No readable EXIF metadata found",
-        "Note":
-          "The image may have no EXIF data or metadata may have been removed."
+      render("exifInfo",{
+        "EXIF":"Not found"
       });
 
-      document.getElementById("rawInfo").textContent =
-        "No EXIF APP1 metadata detected.";
+      document.getElementById("rawInfo").textContent=
+        "No readable EXIF APP1 metadata found.";
+
+      showNoGPS();
 
       return;
     }
 
-    renderInfo("exifInfo", exif);
+    const exif=data.exif || {};
 
-    document.getElementById("rawInfo").textContent =
-      JSON.stringify(exif, null, 2);
+    render("exifInfo",exif);
+
+    document.getElementById("rawInfo").textContent=
+      JSON.stringify(data,null,2);
+
+    handleGPS(data);
 
   };
 
@@ -487,208 +428,262 @@ function readExif(file) {
 }
 
 
-/*
-  JPEG EXIF parser
-*/
+/* -----------------------------
+   JPEG EXIF
+----------------------------- */
 
-function parseJPEGExif(view) {
+function parseJPEG(view){
 
-  if (view.getUint16(0) !== 0xFFD8) {
+  if(view.byteLength<4 ||
+     view.getUint16(0)!==0xFFD8)
     return null;
-  }
 
-  let offset = 2;
+  let offset=2;
 
-  while (offset < view.byteLength) {
+  while(offset+4<view.byteLength){
 
-    if (view.getUint8(offset) !== 0xFF) {
+    if(view.getUint8(offset)!==0xFF){
       offset++;
       continue;
     }
 
-    const marker =
-      view.getUint8(offset + 1);
+    const marker=view.getUint8(offset+1);
+    const len=view.getUint16(offset+2);
 
-    const length =
-      view.getUint16(offset + 2);
+    if(marker===0xE1){
 
-    if (marker === 0xE1) {
+      const start=offset+4;
 
-      const exifStart = offset + 4;
+      const header=readStr(view,start,6);
 
-      const header =
-        readString(view, exifStart, 6);
-
-      if (header === "Exif\u0000\u0000") {
+      if(header==="Exif\u0000\u0000"){
 
         return parseTIFF(
           view,
-          exifStart + 6
+          start+6
         );
-
       }
-
     }
 
-    offset += 2 + length;
+    if(marker===0xDA) break;
+
+    offset+=2+len;
   }
 
   return null;
 }
 
 
-function parseTIFF(view, start) {
+/* -----------------------------
+   TIFF / IFD
+----------------------------- */
 
-  const byteOrder =
-    readString(view, start, 2);
+function parseTIFF(view,base){
+
+  const order=readStr(view,base,2);
 
   let little;
 
-  if (byteOrder === "II") {
-    little = true;
-  }
-  else if (byteOrder === "MM") {
-    little = false;
-  }
-  else {
+  if(order==="II") little=true;
+  else if(order==="MM") little=false;
+  else return null;
+
+  if(view.getUint16(base+2,little)!==42)
     return null;
-  }
 
-  const magic =
-    view.getUint16(start + 2, little);
+  const first=view.getUint32(base+4,little);
 
-  if (magic !== 42) return null;
+  const result={
+    exif:{},
+    gps:{}
+  };
 
-  const firstIFD =
-    view.getUint32(start + 4, little);
-
-  return parseIFD(
+  parseIFD(
     view,
-    start,
-    start + firstIFD,
-    little
+    base,
+    base+first,
+    little,
+    result
   );
-}
-
-
-const TAGS = {
-
-  0x010F: "Camera Make",
-
-  0x0110: "Camera Model",
-
-  0x0112: "Orientation",
-
-  0x011A: "X Resolution",
-
-  0x011B: "Y Resolution",
-
-  0x0128: "Resolution Unit",
-
-  0x0131: "Software",
-
-  0x0132: "Date/Time",
-
-  0x013B: "Artist",
-
-  0x829A: "Shutter Speed",
-
-  0x829D: "Aperture",
-
-  0x8827: "ISO",
-
-  0x9000: "EXIF Version",
-
-  0x9003: "Date/Time Original",
-
-  0x9004: "Date/Time Digitized",
-
-  0x9201: "Shutter Speed",
-
-  0x9202: "Aperture",
-
-  0x9204: "Exposure Bias",
-
-  0x9207: "Metering Mode",
-
-  0x9209: "Flash",
-
-  0x920A: "Focal Length",
-
-  0xA002: "Pixel X Dimension",
-
-  0xA003: "Pixel Y Dimension",
-
-  0xA431: "Camera Serial Number",
-
-  0xA434: "Lens Model",
-
-  0xA435: "Lens Serial Number"
-
-};
-
-
-function parseIFD(view, base, offset, little) {
-
-  if (offset + 2 > view.byteLength)
-    return null;
-
-  const count =
-    view.getUint16(offset, little);
-
-  const result = {};
-
-  for (let i = 0; i < count; i++) {
-
-    const pos =
-      offset + 2 + i * 12;
-
-    if (pos + 12 > view.byteLength)
-      break;
-
-    const tag =
-      view.getUint16(pos, little);
-
-    const type =
-      view.getUint16(pos + 2, little);
-
-    const components =
-      view.getUint32(pos + 4, little);
-
-    const name =
-      TAGS[tag] ||
-      "Tag 0x" +
-      tag.toString(16).toUpperCase();
-
-    let value;
-
-    try {
-
-      value =
-        readValue(
-          view,
-          base,
-          pos + 8,
-          type,
-          components,
-          little
-        );
-
-    } catch {
-
-      value = "Unreadable";
-
-    }
-
-    if (value !== null) {
-      result[name] = value;
-    }
-
-  }
 
   return result;
 }
 
+
+const TAGS={
+
+  0x010F:"Camera Make",
+  0x0110:"Camera Model",
+  0x0112:"Orientation",
+  0x011A:"X Resolution",
+  0x011B:"Y Resolution",
+  0x0128:"Resolution Unit",
+  0x0131:"Software",
+  0x0132:"Date / Time",
+  0x013B:"Artist",
+
+  0x829A:"Shutter Speed",
+  0x829D:"Aperture",
+  0x8827:"ISO",
+
+  0x9000:"EXIF Version",
+  0x9003:"Date / Time Original",
+  0x9004:"Date / Time Digitized",
+
+  0x9201:"Shutter Speed",
+  0x9202:"Aperture",
+  0x9204:"Exposure Bias",
+  0x9207:"Metering Mode",
+  0x9209:"Flash",
+  0x920A:"Focal Length",
+
+  0xA002:"Pixel X Dimension",
+  0xA003:"Pixel Y Dimension",
+  0xA431:"Camera Serial Number",
+  0xA434:"Lens Model",
+  0xA435:"Lens Serial Number",
+
+  0x8769:"EXIF IFD",
+  0x8825:"GPS IFD"
+};
+
+
+const GPSTAGS={
+
+  0x0000:"GPS Version",
+  0x0001:"GPS Latitude Ref",
+  0x0002:"GPS Latitude",
+  0x0003:"GPS Longitude Ref",
+  0x0004:"GPS Longitude",
+  0x0005:"GPS Altitude Ref",
+  0x0006:"GPS Altitude",
+  0x0007:"GPS Time",
+  0x0008:"GPS Satellites",
+  0x001D:"GPS Date",
+  0x0012:"GPS Map Datum",
+  0x001F:"GPS H Positioning Error"
+};
+
+
+function parseIFD(view,base,offset,little,result){
+
+  if(offset+2>view.byteLength) return;
+
+  const count=view.getUint16(offset,little);
+
+  for(let i=0;i<count;i++){
+
+    const pos=offset+2+i*12;
+
+    if(pos+12>view.byteLength) break;
+
+    const tag=view.getUint16(pos,little);
+    const type=view.getUint16(pos+2,little);
+    const components=view.getUint32(pos+4,little);
+
+    let value;
+
+    try{
+
+      value=readValue(
+        view,
+        base,
+        pos+8,
+        type,
+        components,
+        little
+      );
+
+    }catch{
+      value="Unreadable";
+    }
+
+    if(tag===0x8769 && typeof value==="number"){
+
+      parseIFD(
+        view,
+        base,
+        base+value,
+        little,
+        result
+      );
+
+      continue;
+    }
+
+    if(tag===0x8825 && typeof value==="number"){
+
+      parseGPSIFD(
+        view,
+        base,
+        base+value,
+        little,
+        result
+      );
+
+      continue;
+    }
+
+    const name=TAGS[tag] ||
+      "Tag 0x"+
+      tag.toString(16).toUpperCase();
+
+    if(value!==null)
+      result.exif[name]=value;
+  }
+}
+
+
+/* -----------------------------
+   GPS IFD
+----------------------------- */
+
+function parseGPSIFD(view,base,offset,little,result){
+
+  if(offset+2>view.byteLength) return;
+
+  const count=view.getUint16(offset,little);
+
+  for(let i=0;i<count;i++){
+
+    const pos=offset+2+i*12;
+
+    if(pos+12>view.byteLength) break;
+
+    const tag=view.getUint16(pos,little);
+    const type=view.getUint16(pos+2,little);
+    const components=view.getUint32(pos+4,little);
+
+    let value;
+
+    try{
+
+      value=readValue(
+        view,
+        base,
+        pos+8,
+        type,
+        components,
+        little
+      );
+
+    }catch{
+      value="Unreadable";
+    }
+
+    const name=GPSTAGS[tag] ||
+      "GPS Tag 0x"+
+      tag.toString(16).toUpperCase();
+
+    if(value!==null)
+      result.gps[name]=value;
+  }
+}
+
+
+/* -----------------------------
+   TIFF value reader
+----------------------------- */
 
 function readValue(
   view,
@@ -697,283 +692,513 @@ function readValue(
   type,
   count,
   little
-) {
+){
 
-  const sizes = {
-
-    1: 1,
-    2: 1,
-    3: 2,
-    4: 4,
-    5: 8,
-    7: 1,
-    9: 4,
-    10: 8
-
+  const sizes={
+    1:1,
+    2:1,
+    3:2,
+    4:4,
+    5:8,
+    7:1,
+    9:4,
+    10:8
   };
 
-  const size =
-    sizes[type];
+  const size=sizes[type];
 
-  if (!size) return null;
+  if(!size) return null;
 
-  const total =
-    size * count;
+  const total=size*count;
 
   let offset;
 
-  if (total <= 4) {
-    offset = valuePos;
-  }
-  else {
-    offset =
-      base +
-      view.getUint32(valuePos, little);
+  if(total<=4){
+
+    offset=valuePos;
+
+  }else{
+
+    offset=
+      base+
+      view.getUint32(
+        valuePos,
+        little
+      );
   }
 
-  if (offset + total > view.byteLength)
+  if(offset+total>view.byteLength)
     return null;
 
 
-  if (type === 2) {
+  if(type===2){
 
-    return readString(
+    return readStr(
       view,
       offset,
       count
-    ).replace(/\0/g, "");
+    ).replace(/\0/g,"");
 
   }
 
 
-  if (type === 1 || type === 7) {
+  if(type===1 || type===7){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
-      arr.push(view.getUint8(offset + i));
-    }
+    for(let i=0;i<count;i++)
+      arr.push(view.getUint8(offset+i));
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr.join(", ");
   }
 
 
-  if (type === 3) {
+  if(type===3){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
+    for(let i=0;i<count;i++){
 
       arr.push(
         view.getUint16(
-          offset + i * 2,
+          offset+i*2,
           little
         )
       );
-
     }
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr.join(", ");
   }
 
 
-  if (type === 4) {
+  if(type===4){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
+    for(let i=0;i<count;i++){
 
       arr.push(
         view.getUint32(
-          offset + i * 4,
+          offset+i*4,
           little
         )
       );
-
     }
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr.join(", ");
   }
 
 
-  if (type === 5) {
+  if(type===5){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
+    for(let i=0;i<count;i++){
 
-      const n =
-        view.getUint32(
-          offset + i * 8,
-          little
-        );
-
-      const d =
-        view.getUint32(
-          offset + i * 8 + 4,
-          little
-        );
-
-      arr.push(
-        d ? `${n}/${d}` : "0"
+      const n=view.getUint32(
+        offset+i*8,
+        little
       );
 
+      const d=view.getUint32(
+        offset+i*8+4,
+        little
+      );
+
+      arr.push({
+        n:n,
+        d:d
+      });
     }
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr;
   }
 
 
-  if (type === 9) {
+  if(type===9){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
+    for(let i=0;i<count;i++){
 
       arr.push(
         view.getInt32(
-          offset + i * 4,
+          offset+i*4,
           little
         )
       );
-
     }
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr.join(", ");
   }
 
 
-  if (type === 10) {
+  if(type===10){
 
-    const arr = [];
+    const arr=[];
 
-    for (let i = 0; i < count; i++) {
+    for(let i=0;i<count;i++){
 
-      const n =
-        view.getInt32(
-          offset + i * 8,
-          little
-        );
-
-      const d =
-        view.getInt32(
-          offset + i * 8 + 4,
-          little
-        );
-
-      arr.push(
-        d ? `${n}/${d}` : "0"
+      const n=view.getInt32(
+        offset+i*8,
+        little
       );
 
+      const d=view.getInt32(
+        offset+i*8+4,
+        little
+      );
+
+      arr.push({
+        n:n,
+        d:d
+      });
     }
 
-    return arr.length === 1
-      ? arr[0]
-      : arr.join(", ");
-
+    return arr.length===1
+      ?arr[0]
+      :arr;
   }
 
   return null;
 }
 
 
-function readString(view, offset, length) {
+/* -----------------------------
+   GPS conversion
+----------------------------- */
 
-  let str = "";
+function handleGPS(data){
 
-  for (
-    let i = 0;
-    i < length;
-    i++
-  ) {
+  const gps=data.gps || {};
 
-    str += String.fromCharCode(
-      view.getUint8(offset + i)
-    );
+  const lat=gps["GPS Latitude"];
+  const lon=gps["GPS Longitude"];
 
+  const latRef=gps["GPS Latitude Ref"];
+  const lonRef=gps["GPS Longitude Ref"];
+
+  if(
+    !lat ||
+    !lon ||
+    !latRef ||
+    !lonRef
+  ){
+
+    showNoGPS();
+    return;
   }
 
-  return str;
-}
-
-
-function calculateRatio(w, h) {
-
-  const gcd = (a, b) =>
-    b ? gcd(b, a % b) : a;
-
-  const g = gcd(w, h);
-
-  return `${w / g}:${h / g}`;
-
-}
-
-
-function formatBytes(bytes) {
-
-  if (!bytes) return "0 B";
-
-  const units =
-    ["B", "KB", "MB", "GB"];
-
-  const i =
-    Math.floor(
-      Math.log(bytes) /
-      Math.log(1024)
+  const latitude=
+    dmsToDecimal(
+      lat,
+      latRef
     );
 
-  return (
-    (bytes / Math.pow(1024, i))
-      .toFixed(2)
-    + " " +
-    units[i]
+  const longitude=
+    dmsToDecimal(
+      lon,
+      lonRef
+    );
+
+  if(
+    latitude===null ||
+    longitude===null
+  ){
+
+    showNoGPS();
+    return;
+  }
+
+  const info={
+    "Latitude":
+      latitude.toFixed(7)+"°",
+
+    "Longitude":
+      longitude.toFixed(7)+"°"
+  };
+
+  const altitude=
+    gps["GPS Altitude"];
+
+  if(altitude && altitude.n!==undefined){
+
+    info["Altitude"]=
+      (altitude.n/altitude.d)
+      .toFixed(2)+" m";
+  }
+
+  const date=gps["GPS Date"];
+
+  if(date)
+    info["GPS Date"]=date;
+
+  const time=gps["GPS Time"];
+
+  if(time)
+    info["GPS Time"]=formatGPSRational(time);
+
+  render("gpsInfo",info);
+
+  document.getElementById("gpsStatus").textContent=
+    "✓ GPS coordinates found in image EXIF";
+
+  document.getElementById("gpsStatus").style.color=
+    "#76f6c4";
+
+  const google=
+    "https://www.google.com/maps/search/?api=1&query="+
+    latitude+","+longitude;
+
+  const osm=
+    "https://www.openstreetmap.org/?mlat="+
+    latitude+
+    "&mlon="+
+    longitude+
+    "#map=17/"+
+    latitude+
+    "/"+
+    longitude;
+
+  document.getElementById("mapButtons").innerHTML=`
+
+    <a class="map-btn"
+       target="_blank"
+       rel="noopener"
+       href="${google}">
+       🗺️ Open Google Maps
+    </a>
+
+    <a class="map-btn"
+       target="_blank"
+       rel="noopener"
+       href="${osm}">
+       🌍 Open OpenStreetMap
+    </a>
+
+  `;
+}
+
+
+function showNoGPS(){
+
+  document.getElementById("gpsStatus").textContent=
+    "No GPS location found in EXIF metadata";
+
+  document.getElementById("gpsStatus").style.color=
+    "#ff9b9b";
+
+  document.getElementById("gpsInfo").innerHTML=`
+    <div class="item">
+      <div class="label">Location</div>
+      <div class="value">
+        GPS data is not available.
+      </div>
+    </div>
+  `;
+
+  document.getElementById("mapButtons").innerHTML="";
+}
+
+
+function dmsToDecimal(value,ref){
+
+  if(!Array.isArray(value))
+    value=[value];
+
+  if(value.length<3)
+    return null;
+
+  const d=rational(value[0]);
+  const m=rational(value[1]);
+  const s=rational(value[2]);
+
+  if(
+    d===null ||
+    m===null ||
+    s===null
+  )
+    return null;
+
+  let decimal=
+    d+
+    m/60+
+    s/3600;
+
+  if(
+    ref==="S" ||
+    ref==="W"
+  )
+    decimal=-decimal;
+
+  return decimal;
+}
+
+
+function rational(v){
+
+  if(
+    typeof v==="object" &&
+    v!==null &&
+    v.d!==0
+  )
+    return v.n/v.d;
+
+  if(typeof v==="number")
+    return v;
+
+  return null;
+}
+
+
+function formatGPSRational(v){
+
+  if(!Array.isArray(v))
+    v=[v];
+
+  return v.map(x=>{
+
+    const n=rational(x);
+
+    return n===null
+      ?"?"
+      :n.toFixed(2);
+
+  }).join(" : ");
+}
+
+
+/* -----------------------------
+   UI helpers
+----------------------------- */
+
+function render(id,data){
+
+  const box=document.getElementById(id);
+
+  box.innerHTML="";
+
+  Object.entries(data).forEach(([key,value])=>{
+
+    if(typeof value==="object")
+      value=JSON.stringify(value);
+
+    const item=document.createElement("div");
+
+    item.className="item";
+
+    item.innerHTML=`
+      <div class="label">
+        ${safe(key)}
+      </div>
+
+      <div class="value">
+        ${safe(String(value))}
+      </div>
+    `;
+
+    box.appendChild(item);
+  });
+}
+
+
+function safe(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+
+function readStr(view,offset,length){
+
+  let s="";
+
+  for(let i=0;i<length;i++){
+
+    if(offset+i>=view.byteLength)
+      break;
+
+    s+=String.fromCharCode(
+      view.getUint8(offset+i)
+    );
+  }
+
+  return s;
+}
+
+
+function formatBytes(bytes){
+
+  if(!bytes) return "0 B";
+
+  const units=[
+    "B","KB","MB","GB"
+  ];
+
+  const i=Math.floor(
+    Math.log(bytes)/Math.log(1024)
   );
 
+  return(
+    (bytes/Math.pow(1024,i))
+    .toFixed(2)
+    +" "+
+    units[i]
+  );
 }
 
 
-function escapeHTML(str) {
+function ratio(w,h){
 
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  function gcd(a,b){
+    return b?gcd(b,a%b):a;
+  }
 
+  const g=gcd(w,h);
+
+  return(
+    Math.round(w/g)+
+    ":"+
+    Math.round(h/g)
+  );
 }
 
 
-function clearResult() {
+function clearAll(){
 
-  result.style.display = "none";
+  input.value="";
 
-  input.value = "";
+  document.getElementById("result")
+    .style.display="none";
 
-  document.getElementById("basicInfo").innerHTML = "";
-  document.getElementById("exifInfo").innerHTML = "";
-  document.getElementById("rawInfo").textContent = "";
+  document.getElementById("preview").src="";
 
-  document.getElementById("preview").src = "";
+  document.getElementById("basicInfo").innerHTML="";
+  document.getElementById("exifInfo").innerHTML="";
+  document.getElementById("gpsInfo").innerHTML="";
+  document.getElementById("rawInfo").textContent="";
+  document.getElementById("mapButtons").innerHTML="";
 
+  document.getElementById("gpsStatus")
+    .textContent=
+    "Checking EXIF GPS data...";
 }
 
 </script>
 
 </body>
-          </html>
+  </html>
